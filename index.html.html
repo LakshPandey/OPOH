@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPOH — One Planet, Our Home</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  :root{
+    --bg:#fbf9f4;
+    --bg2:#f4efe3;
+    --ink:#16201c;
+    --ink-soft:#4a534d;
+    --amber:#e8954a;
+    --amber-deep:#c96f2b;
+    --green:#2f6b4f;
+    --green-soft:#5c8f72;
+    --line:#dfd6c0;
+    --card:#ffffff;
+    --gold-glow: rgba(232,149,74,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;overflow-x:hidden;scroll-behavior:smooth;}
+  body{font-family: 'Helvetica Neue', Arial, sans-serif;}
+  ::selection{background:var(--amber);color:#fff;}
+
+  a{color:inherit;text-decoration:none;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:fixed;top:0;left:0;width:100%;z-index:200;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 5vw;
+    background:rgba(251,249,244,0.0);
+    transition:background .4s, padding .4s, box-shadow .4s;
+  }
+  nav.scrolled{
+    background:rgba(251,249,244,0.88);
+    backdrop-filter:blur(10px);
+    padding:14px 5vw;
+    box-shadow:0 2px 18px rgba(0,0,0,0.05);
+  }
+  .logo{font-weight:800;font-size:1.15rem;letter-spacing:0.5px;display:flex;align-items:center;gap:10px;}
+  .logo-dot{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--gold-glow);}
+  .navlinks{display:flex;gap:34px;font-size:0.92rem;font-weight:600;color:var(--ink-soft);}
+  .navlinks a{position:relative;padding-bottom:4px;}
+  .navlinks a::after{content:'';position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--amber);transition:width .3s;}
+  .navlinks a:hover{color:var(--ink);}
+  .navlinks a:hover::after{width:100%;}
+  .nav-cta{
+    background:var(--green);color:#fff;padding:9px 20px;border-radius:30px;font-size:0.86rem;font-weight:700;
+    box-shadow:0 4px 14px rgba(47,107,79,0.25);
+    transition:transform .25s, box-shadow .25s;
+  }
+  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(47,107,79,0.35);}
+  .nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;z-index:300;}
+  .nav-burger span{width:24px;height:2px;background:var(--ink);display:block;}
+
+  @media(max-width:880px){
+    .navlinks{position:fixed;top:0;right:0;height:100vh;width:78vw;background:var(--bg);flex-direction:column;justify-content:center;align-items:flex-start;padding:0 40px;gap:28px;transform:translateX(100%);transition:transform .4s ease;}
+    .navlinks.open{transform:translateX(0);box-shadow:-10px 0 30px rgba(0,0,0,0.1);}
+    .nav-burger{display:flex;}
+    .nav-cta{display:none;}
+  }
+
+  /* ---------- HERO ---------- */
+  #hero{
+    position:relative;height:100vh;width:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 30%, #fff7ea 0%, var(--bg) 55%, var(--bg2) 100%);
+  }
+  #hero-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;}
+  .hero-rays{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;mix-blend-mode:soft-light;}
+  .hero-content{position:relative;z-index:5;padding:0 6vw;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:0.78rem;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;
+    color:var(--green);background:rgba(47,107,79,0.08);padding:8px 18px;border-radius:30px;
+    margin-bottom:28px;
+  }
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(47,107,79,0.6);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,107,79,0.5);}70%{box-shadow:0 0 0 10px rgba(47,107,79,0);}100%{box-shadow:0 0 0 0 rgba(47,107,79,0);}}
+  h1.hero-title{
+    font-size:clamp(2.6rem,7vw,5.6rem);font-weight:800;line-height:1.05;letter-spacing:-1.5px;
+    color:var(--ink);
+  }
+  h1.hero-title .accent{color:var(--amber-deep);position:relative;white-space:nowrap;}
+  .hero-sub{
+    margin:26px auto 0;max-width:620px;font-size:clamp(1rem,2vw,1.2rem);color:var(--ink-soft);font-weight:500;line-height:1.6;
+  }
+  .hero-ctas{display:flex;gap:16px;justify-content:center;margin-top:42px;flex-wrap:wrap;}
+  .btn-primary,.btn-secondary{
+    padding:15px 32px;border-radius:40px;font-weight:700;font-size:0.95rem;cursor:pointer;border:none;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--amber),var(--amber-deep));color:#fff;box-shadow:0 8px 24px rgba(232,149,74,0.4);}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(232,149,74,0.5);}
+  .btn-secondary{background:transparent;color:var(--ink);border:2px solid var(--line);}
+  .btn-secondary:hover{border-color:var(--green);color:var(--green);transform:translateY(-3px);}
+  .scroll-cue{
+    position:absolute;bottom:34px;left:50%;transform:translateX(-50%);z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-soft);font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;font-weight:600;
+  }
+  .scroll-cue .mouse{width:22px;height:36px;border:2px solid var(--ink-soft);border-radius:14px;position:relative;}
+  .scroll-cue .mouse::after{content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);width:4px;height:8px;background:var(--ink-soft);border-radius:2px;animation:scrolldown 1.6s infinite;}
+  @keyframes scrolldown{0%{opacity:1;top:6px;}80%{opacity:0;top:18px;}100%{opacity:0;top:6px;}}
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{position:relative;padding:130px 6vw;}
+  .section-label{
+    font-size:0.78rem;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;color:var(--amber-deep);margin-bottom:16px;display:block;
+  }
+  .section-head{max-width:780px;margin-bottom:60px;}
+  .section-head h2{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;letter-spacing:-1px;line-height:1.15;}
+  .section-head p{margin-top:18px;font-size:1.08rem;color:var(--ink-soft);line-height:1.7;}
+
+  .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease, transform .8s ease;}
+  .reveal.visible{opacity:1;transform:translateY(0);}
+
+  /* ---------- THESIS SCROLLY SECTION (panel swap, sticky) ---------- */
+  #thesis{padding:0;background:var(--bg2);}
+  .thesis-wrap{display:flex;position:relative;}
+  .thesis-sticky{
+    position:sticky;top:0;height:100vh;width:46%;display:flex;align-items:center;justify-content:center;
+    padding:0 4vw;
+  }
+  .thesis-visual{width:100%;max-width:440px;aspect-ratio:1/1;position:relative;}
+  .thesis-scroll-col{width:54%;padding:6vw 6vw 6vw 0;}
+  .thesis-step{min-height:88vh;display:flex;flex-direction:column;justify-content:center;opacity:0.25;transition:opacity .4s;}
+  .thesis-step.active{opacity:1;}
+  .thesis-step .num{font-size:0.85rem;font-weight:800;color:var(--amber-deep);letter-spacing:2px;margin-bottom:14px;}
+  .thesis-step h3{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;margin-bottom:16px;letter-spacing:-0.5px;}
+  .thesis-step p{font-size:1.05rem;color:var(--ink-soft);line-height:1.75;max-width:480px;}
+  .thesis-step .honest-tag{
+    display:inline-block;margin-top:18px;font-size:0.82rem;font-weight:700;color:var(--green);background:rgba(47,107,79,0.08);
+    padding:7px 14px;border-radius:20px;
+  }
+  @media(max-width:880px){
+    .thesis-wrap{flex-direction:column;}
+    .thesis-sticky{display:none;}
+    .thesis-scroll-col{width:100%;padding:8vw 0;}
+    .thesis-step{opacity:1;}
+  }
+
+  /* ---------- FLAGSHIPS ---------- */
+  #flagships{background:var(--bg);}
+  .flagship-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;}
+  @media(max-width:880px){.flagship-grid{grid-template-columns:1fr;}}
+  .flagship-card{
+    background:var(--card);border-radius:24px;padding:44px 38px;border:1px solid var(--line);
+    position:relative;overflow:hidden;transition:transform .4s, box-shadow .4s;
+  }
+  .flagship-card:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(0,0,0,0.08);}
+  .flagship-card .glow{position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;filter:blur(40px);opacity:0.35;z-index:0;}
+  .flagship-card.lumina .glow{background:var(--amber);}
+  .flagship-card.belaku .glow{background:var(--green);}
+  .flagship-tag{font-size:0.75rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:20px;display:inline-block;position:relative;z-index:2;}
+  .flagship-card.lumina .flagship-tag{background:rgba(232,149,74,0.15);color:var(--amber-deep);}
+  .flagship-card.belaku .flagship-tag{background:rgba(47,107,79,0.12);color:var(--green);}
+  .flagship-card h3{font-size:1.7rem;font-weight:800;margin:18px 0 6px;position:relative;z-index:2;}
+  .flagship-card .loc{font-size:0.9rem;color:var(--ink-soft);font-weight:600;margin-bottom:18px;position:relative;z-index:2;}
+  .flagship-card .desc{font-size:1rem;color:var(--ink-soft);line-height:1.7;margin-bottom:26px;position:relative;z-index:2;}
+  .flagship-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;z-index:2;}
+  .fstat{background:var(--bg2);border-radius:14px;padding:16px;text-align:center;}
+  .fstat .fnum{font-size:1.7rem;font-weight:800;}
+  .flagship-card.lumina .fnum{color:var(--amber-deep);}
+  .flagship-card.belaku .fnum{color:var(--green);}
+  .fstat .flabel{font-size:0.74rem;color:var(--ink-soft);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;}
+  .placeholder-note{
+    margin-top:18px;font-size:0.82rem;color:var(--ink-soft);background:repeating-linear-gradient(45deg,rgba(0,0,0,0.02),rgba(0,0,0,0.02) 10px,rgba(0,0,0,0.04) 10px,rgba(0,0,0,0.04) 20px);
+    border:1px dashed var(--line);border-radius:10px;padding:10px 14px;position:relative;z-index:2;
+  }
+  .img-placeholder{
+    width:100%;aspect-ratio:16/9;border-radius:16px;margin-bottom:20px;position:relative;z-index:2;
+    background:repeating-linear-gradient(45deg,rgba(0,0,0,0.03),rgba(0,0,0,0.03) 12px,rgba(0,0,0,0.06) 12px,rgba(0,0,0,0.06) 24px);
+    border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;
+    font-size:0.82rem;color:var(--ink-soft);font-weight:600;text-align:center;padding:10px;
+  }
+
+  /* timeline mini for lumina */
+  .mini-timeline{display:flex;gap:6px;margin:18px 0;position:relative;z-index:2;}
+  .mini-timeline .dot{flex:1;height:5px;border-radius:4px;background:var(--line);position:relative;}
+  .mini-timeline .dot.done{background:var(--amber);}
+  .mini-timeline .dot.current{background:var(--amber-deep);}
+
+  /* ---------- FOUNDER CREDIBILITY STRIP ---------- */
+  #credibility{background:var(--ink);color:#fff;padding:100px 6vw;}
+  #credibility .section-label{color:var(--amber);}
+  #credibility .section-head p{color:rgba(255,255,255,0.65);}
+  #credibility .section-head h2{color:#fff;}
+  .cred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;}
+  .cred-card{
+    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;
+    transition:transform .3s, background .3s;
+  }
+  .cred-card:hover{transform:translateY(-4px);background:rgba(255,255,255,0.07);}
+  .cred-card .cred-icon{font-size:1.6rem;margin-bottom:14px;}
+  .cred-card h4{font-size:1.02rem;font-weight:700;margin-bottom:8px;line-height:1.4;}
+  .cred-card p{font-size:0.86rem;color:rgba(255,255,255,0.55);line-height:1.5;}
+
+  /* ---------- GET INVOLVED ---------- */
+  #involved{background:var(--bg2);}
+  .involve-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;}
+  @media(max-width:880px){.involve-grid{grid-template-columns:1fr;}}
+  .involve-card{
+    background:var(--card);border-radius:22px;padding:38px 32px;border:1px solid var(--line);
+    transition:transform .35s, box-shadow .35s;
+  }
+  .involve-card:hover{transform:translateY(-6px);box-shadow:0 20px 44px rgba(0,0,0,0.07);}
+  .involve-icon{
+    width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:20px;
+    background:linear-gradient(135deg, var(--amber), var(--amber-deep));color:#fff;
+  }
+  .involve-card:nth-child(2) .involve-icon{background:linear-gradient(135deg,var(--green-soft),var(--green));}
+  .involve-card:nth-child(3) .involve-icon{background:linear-gradient(135deg,#8a8a8a,#5b5b5b);}
+  .involve-card h3{font-size:1.25rem;font-weight:800;margin-bottom:10px;}
+  .involve-card p{font-size:0.95rem;color:var(--ink-soft);line-height:1.65;margin-bottom:20px;}
+  .involve-card ul{list-style:none;margin-bottom:22px;}
+  .involve-card li{font-size:0.88rem;color:var(--ink-soft);padding:6px 0 6px 22px;position:relative;}
+  .involve-card li::before{content:'→';position:absolute;left:0;color:var(--amber-deep);font-weight:800;}
+  .involve-link{font-size:0.88rem;font-weight:700;color:var(--green);display:inline-flex;align-items:center;gap:6px;}
+  .involve-link svg{transition:transform .25s;}
+  .involve-card:hover .involve-link svg{transform:translateX(4px);}
+
+  /* ---------- SUPPORT US ---------- */
+  #support{background:var(--bg);}
+  .support-layers{display:flex;flex-direction:column;gap:18px;}
+  .support-layer{
+    display:grid;grid-template-columns:90px 1fr auto;align-items:center;gap:24px;
+    background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px 32px;
+    transition:transform .3s, box-shadow .3s;
+  }
+  .support-layer:hover{transform:translateX(6px);box-shadow:0 14px 30px rgba(0,0,0,0.06);}
+  @media(max-width:700px){.support-layer{grid-template-columns:1fr;text-align:left;gap:14px;}}
+  .support-rank{
+    font-size:2.2rem;font-weight:800;color:var(--line);
+  }
+  .support-layer.primary .support-rank{color:var(--amber);}
+  .support-layer h3{font-size:1.15rem;font-weight:800;margin-bottom:6px;}
+  .support-layer p{font-size:0.92rem;color:var(--ink-soft);line-height:1.6;}
+  .support-btn{
+    padding:12px 26px;border-radius:30px;font-weight:700;font-size:0.88rem;white-space:nowrap;
+    background:var(--bg2);color:var(--ink);border:1px solid var(--line);
+  }
+  .support-layer.primary .support-btn{background:linear-gradient(135deg,var(--amber),var(--amber-deep));color:#fff;border:none;}
+  .trust-note{
+    margin-top:36px;padding:20px 26px;border-radius:16px;background:rgba(47,107,79,0.06);border:1px solid rgba(47,107,79,0.15);
+    font-size:0.9rem;color:var(--ink-soft);line-height:1.7;
+  }
+  .trust-note strong{color:var(--green);}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--ink);color:rgba(255,255,255,0.7);padding:70px 6vw 30px;}
+  .foot-top{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;margin-bottom:50px;}
+  .foot-brand h3{color:#fff;font-size:1.3rem;font-weight:800;margin-bottom:10px;}
+  .foot-brand p{max-width:340px;font-size:0.9rem;line-height:1.7;}
+  .foot-cols{display:flex;gap:60px;flex-wrap:wrap;}
+  .foot-col h4{color:#fff;font-size:0.85rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+  .foot-col a{display:block;font-size:0.9rem;margin-bottom:10px;color:rgba(255,255,255,0.65);transition:color .2s;}
+  .foot-col a:hover{color:var(--amber);}
+  .foot-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:0.8rem;color:rgba(255,255,255,0.4);}
+
+  /* generic stat counter style used in sections */
+  .stat-counter{font-weight:800;}
+
+  /* sdg badges */
+  .sdg-badges{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+  .sdg-badge{
+    display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:30px;padding:7px 16px 7px 7px;font-size:0.78rem;font-weight:700;
+  }
+  .sdg-badge .sdg-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.78rem;font-weight:800;}
+  .sdg-badge.s7 .sdg-num{background:#FCC30B;}
+  .sdg-badge.s4 .sdg-num{background:#C5192D;}
+  .sdg-badge.s13 .sdg-num{background:#3F7E44;}
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<nav id="mainNav">
+  <div class="logo"><span class="logo-dot"></span>OPOH</div>
+  <div class="navlinks" id="navLinks">
+    <a href="#thesis" onclick="closeNav()">Approach</a>
+    <a href="#flagships" onclick="closeNav()">Flagships</a>
+    <a href="#credibility" onclick="closeNav()">Team</a>
+    <a href="#involved" onclick="closeNav()">Get Involved</a>
+    <a href="#support" onclick="closeNav()">Support</a>
+  </div>
+  <a href="#support" class="nav-cta">Adopt a Light</a>
+  <div class="nav-burger" id="navBurger" onclick="toggleNav()"><span></span><span></span><span></span></div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <svg class="hero-rays" id="rayOverlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+  <div class="hero-content">
+    <div class="eyebrow"><span class="pulse"></span>Student-Led Energy-Access SDG Initiative</div>
+    <h1 class="hero-title">One Planet,<br><span class="accent">Our Home.</span></h1>
+    <p class="hero-sub">A student-founded initiative bringing solar energy and education to schools that need it most — proving the model at home, and scaling it where it matters.</p>
+    <div class="hero-ctas">
+      <button class="btn-primary" onclick="document.getElementById('support').scrollIntoView({behavior:'smooth'})">Support Our Work</button>
+      <button class="btn-secondary" onclick="document.getElementById('flagships').scrollIntoView({behavior:'smooth'})">See the Projects</button>
+    </div>
+  </div>
+  <div class="scroll-cue"><div class="mouse"></div>Scroll</div>
+</section>
+
+<!-- ================= THESIS (sticky scrollytelling) ================= -->
+<section id="thesis">
+  <div class="thesis-wrap">
+    <div class="thesis-sticky">
+      <div class="thesis-visual">
+        <canvas id="thesisCanvas" style="width:100%;height:100%;"></canvas>
+      </div>
+    </div>
+    <div class="thesis-scroll-col">
+      <div class="thesis-step" data-step="0">
+        <div class="num">OUR THESIS</div>
+        <h3>Energy access changes what a school can teach.</h3>
+        <p>No power means no labs, no fans in summer, no lights for evening classes, no working computers. Energy access isn't a side issue for under-resourced schools — it's the bottleneck underneath everything else.</p>
+      </div>
+      <div class="thesis-step" data-step="1">
+        <div class="num">WHY SCHOOLS</div>
+        <h3>Schools are the highest-leverage place to deploy solar.</h3>
+        <p>A solarized school doesn't just save money — it becomes a living classroom for climate and energy literacy, and a visible, trusted proof point for the whole community around it.</p>
+      </div>
+      <div class="thesis-step" data-step="2">
+        <div class="num">WHERE WE ARE</div>
+        <h3>Small, founder-led, and building deliberately.</h3>
+        <p>OPOH is a young, student-run initiative. We're not a large NGO with a big back office — we're a focused team proving a model with Lumina, and now scaling it through Belaku. We'd rather be honest about our stage than overstate it.</p>
+        <span class="honest-tag">Early and serious — not hidden, not inflated</span>
+      </div>
+      <div class="thesis-step" data-step="3">
+        <div class="num">THE MODEL</div>
+        <h3>Prove it once. Replicate it everywhere.</h3>
+        <p>Lumina proved school solarization works. Belaku takes the lesson further — solar light plus energy education, designed from day one to scale across government schools.</p>
+        <div class="sdg-badges">
+          <div class="sdg-badge s7"><span class="sdg-num">7</span>Affordable &amp; Clean Energy</div>
+          <div class="sdg-badge s4"><span class="sdg-num">4</span>Quality Education</div>
+          <div class="sdg-badge s13"><span class="sdg-num">13</span>Climate Action</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLAGSHIPS ================= -->
+<section id="flagships">
+  <div class="section-head reveal">
+    <span class="section-label">Two Flagships</span>
+    <h2>One model, proven twice over.</h2>
+    <p>Lumina showed that full school solarization works. Belaku takes that proof and turns it into something built to scale — solar light and energy education for government schools that need it most.</p>
+  </div>
+  <div class="flagship-grid">
+    <div class="flagship-card lumina reveal">
+      <div class="glow"></div>
+      <div class="img-placeholder">📷 Placeholder — photo of Lumina solar install / Chaman Bhartiya rooftop panels</div>
+      <span class="flagship-tag">Flagship 01 · Proof of Model</span>
+      <h3>Project Lumina</h3>
+      <div class="loc">Chaman Bhartiya School, Bengaluru</div>
+      <p class="desc">The full solarization of Chaman Bhartiya School — from fundraising to install. Lumina is the proof point: a complete, real-world case study that the school-solarization model works end to end.</p>
+      <div class="mini-timeline">
+        <div class="dot done"></div><div class="dot done"></div><div class="dot current"></div><div class="dot"></div>
+      </div>
+      <div class="flagship-stats">
+        <div class="fstat"><div class="fnum">₹45L+</div><div class="flabel">Raised</div></div>
+        <div class="fstat"><div class="fnum">1</div><div class="flabel">School Solarized</div></div>
+      </div>
+      <div class="placeholder-note">⚡ kWh generated / CO₂ offset — monitoring begins once panels are fully live. Updated here with real data, not placeholders.</div>
+    </div>
+
+    <div class="flagship-card belaku reveal">
+      <div class="glow"></div>
+      <div class="img-placeholder">📷 Placeholder — photo of solar light install / government school outreach session</div>
+      <span class="flagship-tag">Flagship 02 · Scaling the Model</span>
+      <h3>Project Belaku</h3>
+      <div class="loc">Government Schools, Bengaluru &amp; beyond</div>
+      <p class="desc">Belaku ("light," in Kannada) brings solar-powered lighting and hands-on energy education to government schools — a lighter, faster, more replicable version of the model Lumina proved.</p>
+      <div class="mini-timeline">
+        <div class="dot done"></div><div class="dot current"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <div class="flagship-stats">
+        <div class="fstat"><div class="fnum">Audit</div><div class="flabel">Phase: First</div></div>
+        <div class="fstat"><div class="fnum">SUPW</div><div class="flabel">Outreach Module</div></div>
+      </div>
+      <div class="placeholder-note">📍 Partner names &amp; install count — added once partnerships (e.g. SELCO) are confirmed. No timeline promised until funding is secured.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOUNDER CREDIBILITY ================= -->
+<section id="credibility">
+  <div class="section-head reveal">
+    <span class="section-label">Behind The Work</span>
+    <h2>Built by a team that's already proven it can execute.</h2>
+    <p>OPOH is led by students with a track record in the exact fields this work draws on — energy research, engineering, and applied science.</p>
+  </div>
+  <div class="cred-grid">
+    <div class="cred-card reveal">
+      <div class="cred-icon">🚀</div>
+      <h4>1st Place — Mars Society International Mission to Mars Design Competition (2025)</h4>
+      <p>Team SOLACE — overall winners &amp; Science/Engineering category winners. Invited to present at the 28th Annual Mars Society Convention, USC.</p>
+    </div>
+    <div class="cred-card reveal">
+      <div class="cred-icon">🏆</div>
+      <h4>1st Place — Russian Tech Fest</h4>
+      <p>Recognized for thermoradiative renewable energy research; invited to Russia to present and further develop the work.</p>
+    </div>
+    <div class="cred-card reveal">
+      <div class="cred-icon">📄</div>
+      <h4>Provisional Patent Filed</h4>
+      <p>A hybrid nighttime radiative cooling &amp; thermoelectric generation system — filed with the Indian Patent Office.</p>
+    </div>
+    <div class="cred-card reveal">
+      <div class="cred-icon">🛰️</div>
+      <h4>CanSat — Atmospheric Research</h4>
+      <p>Designed and launched a satellite to 1,000m for urban microclimate analysis; published research on ESS Open Archive, Zenodo, and SSRN.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GET INVOLVED ================= -->
+<section id="involved">
+  <div class="section-head reveal">
+    <span class="section-label">Get Involved</span>
+    <h2>Three ways to be part of this.</h2>
+    <p>Whether you're a student, a school, or an adult who wants to help us do this properly — there's a real role for you here.</p>
+  </div>
+  <div class="involve-grid">
+    <div class="involve-card reveal">
+      <div class="involve-icon">🎓</div>
+      <h3>Students</h3>
+      <p>Join the core team and help build OPOH from the ground up.</p>
+      <ul>
+        <li>Outreach &amp; partnerships</li>
+        <li>Design &amp; content</li>
+        <li>Field coordination for installs</li>
+      </ul>
+      <a class="involve-link" href="#">Apply to join the team <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="involve-card reveal">
+      <div class="involve-icon">🏫</div>
+      <h3>Schools</h3>
+      <p>Run the SUPW energy-audit module with your students, or host a Belaku install.</p>
+      <ul>
+        <li>Energy audit workshop</li>
+        <li>Belaku solar-light install</li>
+        <li>Student energy-literacy sessions</li>
+      </ul>
+      <a class="involve-link" href="#">Bring OPOH to your school <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="involve-card reveal">
+      <div class="involve-icon">🤝</div>
+      <h3>Adults / Trustees</h3>
+      <p>Help with the formal trust structure and governance as we grow.</p>
+      <ul>
+        <li>Trust &amp; legal paperwork</li>
+        <li>Financial oversight</li>
+        <li>Mentorship &amp; advising</li>
+      </ul>
+      <a class="involve-link" href="#">Get in touch <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SUPPORT US ================= -->
+<section id="support">
+  <div class="section-head reveal">
+    <span class="section-label">Support Us</span>
+    <h2>Every layer of support moves a real install forward.</h2>
+    <p>We ask in stages — starting small, building trust, scaling up as the work proves itself.</p>
+  </div>
+  <div class="support-layers">
+    <div class="support-layer primary reveal">
+      <div class="support-rank">01</div>
+      <div>
+        <h3>Adopt a Light</h3>
+        <p>A small, recurring or one-time micro-donation that directly funds a solar light install under Project Belaku.</p>
+      </div>
+      <a class="support-btn" href="#">💡 Placeholder — Payment Link</a>
+    </div>
+    <div class="support-layer reveal">
+      <div class="support-rank">02</div>
+      <div>
+        <h3>Local Business Sponsorship</h3>
+        <p>Sponsor an install or audit session — your business gets named recognition on-site and on this page.</p>
+      </div>
+      <a class="support-btn" href="#">Become a Sponsor</a>
+    </div>
+    <div class="support-layer reveal">
+      <div class="support-rank">03</div>
+      <div>
+        <h3>Partner With Us</h3>
+        <p>For larger CSR or grant partnerships — held back until Lumina's panels are fully live and verified.</p>
+      </div>
+      <a class="support-btn" href="#">Request a Conversation</a>
+    </div>
+  </div>
+  <div class="trust-note reveal">
+    <strong>Note on receipts:</strong> While our formal trust structure is being finalized, donations may be fiscally sponsored through our partner school's trust — so your receipt may carry a different registered name. We'll always be upfront about this when you give.
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <h3>OPOH</h3>
+      <p>One Planet, Our Home — a student-led energy-access initiative bringing solar power and education to schools that need it most.</p>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col">
+        <h4>Explore</h4>
+        <a href="#thesis">Our Approach</a>
+        <a href="#flagships">Lumina &amp; Belaku</a>
+        <a href="#credibility">Our Team</a>
+      </div>
+      <div class="foot-col">
+        <h4>Connect</h4>
+        <a href="#">📧 Placeholder — Email</a>
+        <a href="#">📷 Placeholder — Instagram</a>
+        <a href="#">💼 Placeholder — LinkedIn</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 OPOH — One Planet, Our Home</span>
+    <span>Student-Led · SDG 7 · SDG 4 · SDG 13</span>
+  </div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ---------- NAV ---------- */
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', ()=>{
+  if(window.scrollY > 40) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+function toggleNav(){document.getElementById('navLinks').classList.toggle('open');}
+function closeNav(){document.getElementById('navLinks').classList.remove('open');}
+
+/* ---------- REVEAL ON SCROLL ---------- */
+document.querySelectorAll('.reveal').forEach(el=>{
+  ScrollTrigger.create({
+    trigger: el,
+    start: 'top 85%',
+    onEnter: ()=> el.classList.add('visible'),
+    once:true
+  });
+});
+
+/* ---------- HERO THREE.JS SCENE ---------- */
+let heroScene, heroCamera, heroRenderer, sunMesh, particles, rayLines=[];
+function initHero(){
+  const canvas = document.getElementById('hero-canvas');
+  heroScene = new THREE.Scene();
+  heroCamera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);
+  heroCamera.position.z = 14;
+  heroRenderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  heroRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  heroRenderer.setSize(window.innerWidth, window.innerHeight);
+
+  // central glowing "sun" energy orb made of layered icosahedrons
+  const group = new THREE.Group();
+  const coreGeo = new THREE.IcosahedronGeometry(2.6, 1);
+  const coreMat = new THREE.MeshBasicMaterial({color:0xe8954a, wireframe:true, transparent:true, opacity:0.55});
+  sunMesh = new THREE.Mesh(coreGeo, coreMat);
+  group.add(sunMesh);
+
+  const innerGeo = new THREE.IcosahedronGeometry(1.7, 0);
+  const innerMat = new THREE.MeshBasicMaterial({color:0xffd28a, wireframe:true, transparent:true, opacity:0.45});
+  const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+  group.add(innerMesh);
+  group.userData.inner = innerMesh;
+
+  heroScene.add(group);
+  heroScene.userData.group = group;
+
+  // floating particles (energy motes)
+  const pCount = 220;
+  const pGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(pCount*3);
+  for(let i=0;i<pCount;i++){
+    positions[i*3] = (Math.random()-0.5)*30;
+    positions[i*3+1] = (Math.random()-0.5)*18;
+    positions[i*3+2] = (Math.random()-0.5)*20;
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const pMat = new THREE.PointsMaterial({color:0xc96f2b, size:0.06, transparent:true, opacity:0.5});
+  particles = new THREE.Points(pGeo, pMat);
+  heroScene.add(particles);
+
+  // a few small floating "panel" wireframe planes representing solar panels
+  for(let i=0;i<5;i++){
+    const pg = new THREE.PlaneGeometry(1.4,1.4);
+    const pm = new THREE.MeshBasicMaterial({color:0x2f6b4f, wireframe:true, transparent:true, opacity:0.4, side:THREE.DoubleSide});
+    const panel = new THREE.Mesh(pg,pm);
+    panel.position.set((Math.random()-0.5)*12,(Math.random()-0.5)*7,(Math.random()-0.5)*6);
+    panel.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+    panel.userData.speed = 0.002 + Math.random()*0.003;
+    heroScene.add(panel);
+    rayLines.push(panel);
+  }
+
+  animateHero();
+}
+let mouseX=0, mouseY=0;
+window.addEventListener('mousemove', e=>{
+  mouseX = (e.clientX/window.innerWidth - 0.5);
+  mouseY = (e.clientY/window.innerHeight - 0.5);
+});
+function animateHero(){
+  requestAnimationFrame(animateHero);
+  const t = Date.now()*0.001;
+  const group = heroScene.userData.group;
+  group.rotation.y += 0.0022;
+  group.rotation.x = Math.sin(t*0.3)*0.08;
+  group.userData.inner.rotation.y -= 0.004;
+  group.userData.inner.rotation.x += 0.002;
+  particles.rotation.y += 0.0006;
+  rayLines.forEach(p=>{p.rotation.y += p.userData.speed; p.rotation.x += p.userData.speed*0.6;});
+  heroCamera.position.x += (mouseX*2 - heroCamera.position.x)*0.02;
+  heroCamera.position.y += (-mouseY*1.2 - heroCamera.position.y)*0.02;
+  heroCamera.lookAt(0,0,0);
+  heroRenderer.render(heroScene, heroCamera);
+}
+window.addEventListener('resize', ()=>{
+  if(!heroRenderer) return;
+  heroCamera.aspect = window.innerWidth/window.innerHeight;
+  heroCamera.updateProjectionMatrix();
+  heroRenderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ---------- SVG LIGHT RAYS OVERLAY ---------- */
+function buildRays(){
+  const svg = document.getElementById('rayOverlay');
+  const cx=500, cy=420;
+  let html='';
+  for(let i=0;i<14;i++){
+    const angle = (i/14)*Math.PI*2;
+    const len = 700 + Math.random()*200;
+    const x2 = cx + Math.cos(angle)*len;
+    const y2 = cy + Math.sin(angle)*len;
+    const opacity = 0.04 + Math.random()*0.05;
+    html += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#e8954a" stroke-width="${1+Math.random()*2}" opacity="${opacity}" class="ray-line"/>`;
+  }
+  svg.innerHTML = html;
+  gsap.to('.ray-line', {
+    rotation: 360,
+    transformOrigin: `${cx}px ${cy}px`,
+    duration: 90,
+    repeat:-1,
+    ease:'none'
+  });
+}
+
+/* ---------- THESIS STICKY SCROLLYTELLING ---------- */
+function initThesis(){
+  const steps = document.querySelectorAll('.thesis-step');
+  const canvas = document.getElementById('thesisCanvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  camera.position.z = 6;
+  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  function sizeThesisCanvas(){
+    const box = canvas.parentElement.getBoundingClientRect();
+    renderer.setSize(box.width, box.height);
+    camera.aspect = box.width/box.height;
+    camera.updateProjectionMatrix();
+  }
+  sizeThesisCanvas();
+  window.addEventListener('resize', sizeThesisCanvas);
+
+  const shapes = [];
+  // shape 0: bulb wireframe (sphere)
+  const s0 = new THREE.Mesh(new THREE.SphereGeometry(1.6,16,16), new THREE.MeshBasicMaterial({color:0xc96f2b, wireframe:true}));
+  // shape 1: school building blocks
+  const s1 = new THREE.Group();
+  for(let i=0;i<3;i++){
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1,1.4,1), new THREE.MeshBasicMaterial({color:0x2f6b4f, wireframe:true}));
+    box.position.x = (i-1)*1.3;
+    s1.add(box);
+  }
+  // shape 2: small seedling/team dots cluster (torus knot-ish simple)
+  const s2 = new THREE.Mesh(new THREE.TorusGeometry(1.3,0.35,8,40), new THREE.MeshBasicMaterial({color:0x5c8f72, wireframe:true}));
+  // shape 3: two icosahedrons orbiting (lumina+belaku)
+  const s3 = new THREE.Group();
+  const a = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9,0), new THREE.MeshBasicMaterial({color:0xe8954a, wireframe:true}));
+  const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9,0), new THREE.MeshBasicMaterial({color:0x2f6b4f, wireframe:true}));
+  a.position.x=-1.2; b.position.x=1.2;
+  s3.add(a); s3.add(b);
+  s3.userData.a=a; s3.userData.b=b;
+
+  shapes.push(s0,s1,s2,s3);
+  shapes.forEach((s,i)=>{ s.visible = (i===0); scene.add(s); });
+
+  let activeIndex = 0;
+  function setActive(i){
+    if(i===activeIndex) return;
+    shapes[activeIndex].visible=false;
+    shapes[i].visible=true;
+    activeIndex=i;
+    steps.forEach((st,idx)=> st.classList.toggle('active', idx===i));
+  }
+
+  steps.forEach((step, i)=>{
+    ScrollTrigger.create({
+      trigger: step,
+      start: 'top 55%',
+      end: 'bottom 45%',
+      onEnter: ()=> setActive(i),
+      onEnterBack: ()=> setActive(i)
+    });
+  });
+  steps[0].classList.add('active');
+
+  function animateThesis(){
+    requestAnimationFrame(animateThesis);
+    shapes.forEach(s=>{ if(s.visible){ s.rotation.y += 0.006; s.rotation.x += 0.002; }});
+    if(s3.visible){
+      const t=Date.now()*0.001;
+      s3.userData.a.position.y = Math.sin(t)*0.3;
+      s3.userData.b.position.y = Math.cos(t)*0.3;
+    }
+    renderer.render(scene, camera);
+  }
+  animateThesis();
+}
+
+/* ---------- ANIMATED STAT COUNTERS ---------- */
+document.querySelectorAll('.fnum, .stat-counter').forEach(el=>{
+  const raw = el.textContent.trim();
+  const match = raw.match(/[\d.]+/);
+  if(!match) return; // skip non-numeric (e.g. "Audit", "SUPW")
+  const target = parseFloat(match[0]);
+  const suffix = raw.replace(match[0],'');
+  el.textContent = '0'+suffix;
+  ScrollTrigger.create({
+    trigger: el,
+    start:'top 90%',
+    once:true,
+    onEnter: ()=>{
+      gsap.to({val:0},{
+        val:target,
+        duration:1.6,
+        ease:'power2.out',
+        onUpdate: function(){
+          el.textContent = (target%1===0? Math.floor(this.targets()[0].val): this.targets()[0].val.toFixed(1)) + suffix;
+        }
+      });
+    }
+  });
+});
+
+/* ---------- INIT ---------- */
+window.addEventListener('load', ()=>{
+  initHero();
+  buildRays();
+  initThesis();
+});
+</script>
+</body>
+</html>
